@@ -29,14 +29,14 @@ class NetTexture(nn.Module):
             return self.simple_lin(input_pts)
         else:
             # input_pts in [-1,1]
-            input_embed = self.embedder(input_pts)
+            input_embed = self.embedder(input_pts.unsqueeze(-1).unsqueeze(-1))
             h = input_embed
             for i, l in enumerate(self.pts_linears):
                 h = self.pts_linears[i](h)
                 h = F.leaky_relu(h)
                 if i in self.skips:
                     h = torch.cat([input_embed, h], 1)
-            return self.output_linear(h)
+            return self.output_linear(h).squeeze(-1).squeeze(-1)
 
 
 class Embedder:

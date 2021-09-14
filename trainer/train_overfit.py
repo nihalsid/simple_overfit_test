@@ -6,6 +6,7 @@ import torch
 
 from dataset.mesh_data import MeshData
 from model.net_texture import NetTexture
+from model.siren.modules import SingleBVPNet
 
 
 def main(config):
@@ -37,7 +38,11 @@ def main(config):
     valset = MeshData()
 
     # instantiate model
+    # MLP with Positional encoding
     model = NetTexture(sample_point_dim=3, texture_features=3, n_layers=8, n_freq=10, ngf=256)
+
+    # SIREN
+    # model = SingleBVPNet(type='sine', in_features=3, out_features=3)
 
     # load model if resuming from checkpoint
     if config['resume_ckpt'] is not None:
@@ -79,7 +84,7 @@ def train(model, trainloader, valds, device, config):
             optimizer.zero_grad()
 
             # forward pass
-            prediction = model(batch['vertex'].unsqueeze(-1).unsqueeze(-1)).squeeze(-1).squeeze(-1)
+            prediction = model(batch['vertex'])
 
             # compute total loss = sum of loss for whole prediction + losses for partial predictions
             loss_total = loss_criterion(prediction, batch['color'])
@@ -109,7 +114,7 @@ def train(model, trainloader, valds, device, config):
                 vertex, color = valds.get_data_on_device(device)
 
                 with torch.no_grad():
-                    prediction = model(vertex.unsqueeze(-1).unsqueeze(-1)).squeeze(-1).squeeze(-1)
+                    prediction = model(vertex)
 
                 loss_total_val = loss_criterion(prediction, color).item()
 
